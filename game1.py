@@ -4,11 +4,11 @@ import math
 
 pygame.init()
 
-WIDTH = 1280
-HEIGHT = 720
+WIDTH = 1500
+HEIGHT = 800
 FPS = 60
-PLAYER_START_X = 400
-PLAYER_START_Y = 500
+PLAYER_START_X = WIDTH//2
+PLAYER_START_Y = HEIGHT//2
 PLAYER_SIZE = 0.05
 PLAYER_SPEED = 8
 
@@ -38,9 +38,20 @@ class Player(pygame.sprite.Sprite):
             self.velocity_x = self.speed
         elif keys[pygame.K_a]:
             self.velocity_x = -self.speed
-
+    
     def move(self):
         self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
+
+        # boundary
+        if self.pos.x < 0:
+            self.pos.x = 0
+        elif self.pos.x > WIDTH - self.image.get_width():
+            self.pos.x = WIDTH - self.image.get_width()
+
+        if self.pos.y < 0:
+            self.pos.y = 0
+        elif self.pos.y > HEIGHT - self.image.get_height():
+            self.pos.y = HEIGHT - self.image.get_height()
 
     def update(self):
         self.user_input()
