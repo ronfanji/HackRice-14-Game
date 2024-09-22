@@ -16,7 +16,7 @@ BLOCK_SIZE = 50
 PLAYER_START_X = WIDTH//2
 PLAYER_START_Y = HEIGHT//2
 PLAYER_SIZE = 1 #0.2
-PLAYER_SPEED = 8
+PLAYER_SPEED = 5
 
 # Enemy Settings
 ENEMY_SPEED = 1
@@ -88,7 +88,47 @@ class Player(pygame.sprite.Sprite):
             self.is_blocking(current_dir)
         else:
             self.block = False
-    
+
+
+        # Move the player temporarily
+        temp_rect = self.rect.move(self.velocity_x, self.velocity_y)
+
+        # Check for collisions
+        for block_x in range(len(block_list)):
+            for block_y in range(len(block_list[0])):
+                if block_list[block_x][block_y] == 1:
+                    block_rect = pygame.Rect(block_x * BLOCK_SIZE, block_y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+
+                    if temp_rect.colliderect(block_rect):
+                        # Handle collision response
+                        if self.velocity_y < 0:  # Moving up
+                            temp_rect.top = block_rect.bottom
+                            self.pos += pygame.math.Vector2(self.velocity_x, 0)
+                        elif self.velocity_y > 0:  # Moving down
+                            temp_rect.bottom = block_rect.top
+                            self.pos += pygame.math.Vector2(self.velocity_x, 0)
+                        elif self.velocity_x < 0:  # Moving left
+                            temp_rect.left = block_rect.right
+                            self.pos += pygame.math.Vector2(0, self.velocity_y)
+                        elif self.velocity_x > 0:  # Moving right
+                            temp_rect.right = block_rect.left
+                            self.pos += pygame.math.Vector2(0, self.velocity_y)
+
+        # Update the player's rectangle position
+        self.rect = temp_rect
+        self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
+
+
+    def attack(self):
+        keys = pygame.key.get_pressed()
+
+    def update(self):
+        self.user_input()
+        # self.move()
+        self.attack()
+
+
+
     def is_shooting(self, dir): 
         if self.shoot_cooldown == 0:
             self.shoot_cooldown = SHOOT_COOLDOWN
@@ -116,6 +156,11 @@ class Player(pygame.sprite.Sprite):
                 block_group.add(self.block)
                 all_sprites_group.add(self.block)
 
+                grid_row = math.floor(spawn_block[0] + sur_block[0]*BLOCK_SIZE - BLOCK_SIZE//2)//BLOCK_SIZE
+                grid_col = math.floor(spawn_block[1] + sur_block[1]*BLOCK_SIZE - BLOCK_SIZE//2)//BLOCK_SIZE
+                block_list[grid_row][grid_col] = 1
+
+
     def move(self):
         self.pos += pygame.math.Vector2(self.velocity_x, self.velocity_y)
 
@@ -135,6 +180,9 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         self.user_input()
         self.move()
+        
+
+        self.attack()
         
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= 1
@@ -201,6 +249,13 @@ class Block(pygame.sprite.Sprite):
         self.rect.y = int(self.y)
 
         if pygame.time.get_ticks() - self.spawn_time > self.block_lifetime:
+            print(self.x, self.y)
+            
+            grid_row = math.floor(self.x / BLOCK_SIZE)
+            grid_col = math.floor(self.y / BLOCK_SIZE)
+            print (block_list[grid_row][grid_col])
+            print(block_list)
+            block_list[grid_row][grid_col] = 0
             self.kill()
 
     def update(self):
@@ -222,6 +277,7 @@ class Enemy(pygame.sprite.Sprite):
         player_vector = pygame.math.Vector2(player.pos)
         enemy_vector = pygame.math.Vector2(self.rect.center)
         distance = self.distance(player_vector, enemy_vector)
+
 
         if distance > 0:
             self.direction = (player_vector - enemy_vector).normalize()
@@ -248,12 +304,12 @@ block_group = pygame.sprite.Group()
 all_sprites_group.add(player)
 all_sprites_group.add(enemy)
 
-# block_list = []
-# for i in range(WIDTH // BLOCK_SIZE):
-#     temp_block_list = []
-#     for j in range(HEIGHT // BLOCK_SIZE):
-#         temp_block_list.append(0)
-#     block_list.append(temp_block_list)
+block_list = []
+for i in range(WIDTH // BLOCK_SIZE):
+    temp_block_list = []
+    for j in range(HEIGHT // BLOCK_SIZE):
+        temp_block_list.append(0)
+    block_list.append(temp_block_list)
 
 game_over = False
 
